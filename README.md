@@ -101,20 +101,108 @@ Aplikasi ini menggunakan JWT untuk authentication dan bcryptjs untuk password ha
 
 ### Authentication
 
-#### Login
-```
-POST /api/auth/login
-Content-Type: application/json
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| POST | `/api/auth/login` | No | Login dengan username & password, returns JWT token |
 
-{
-  "username": "your_username",
-  "password": "your_password"
-}
+### Admin Management (Superadmin Only)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| POST | `/api/admin/create` | Yes | Buat akun Admin Gereja baru |
+| GET | `/api/admin` | Yes | Lihat daftar semua Admin Gereja |
+| PUT | `/api/admin/:id/activate` | Yes | Aktifkan Admin Gereja yang sudah dinonaktifkan |
+| PUT | `/api/admin/:id/deactivate` | Yes | Nonaktifkan Admin Gereja |
+| DELETE | `/api/admin/:id` | Yes | Hapus Admin Gereja |
+| PUT | `/api/admin/change-password` | Yes | Ubah password Admin Gereja |
+
+### Minggu Batak (Public Read, Admin Write)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/minggu-batak` | No | Ambil semua data Minggu Batak |
+| GET | `/api/minggu-batak/:id` | No | Ambil detail data Minggu Batak by ID |
+| GET | `/api/minggu-batak/:id/view` | No | View file PDF inline |
+| GET | `/api/minggu-batak/:id/download` | No | Download file PDF |
+| POST | `/api/minggu-batak` | Yes | Buat data Minggu Batak baru (dengan upload PDF) |
+| PUT | `/api/minggu-batak/:id` | Yes | Update data Minggu Batak |
+| DELETE | `/api/minggu-batak/:id` | Yes | Hapus data Minggu Batak |
+
+### Minggu Indonesia (Public Read, Admin Write)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/minggu-indonesia` | No | Ambil semua data Minggu Indonesia |
+| GET | `/api/minggu-indonesia/:id` | No | Ambil detail data Minggu Indonesia by ID |
+| GET | `/api/minggu-indonesia/:id/view` | No | View file PDF inline |
+| GET | `/api/minggu-indonesia/:id/download` | No | Download file PDF |
+| POST | `/api/minggu-indonesia` | Yes | Buat data Minggu Indonesia baru |
+| PUT | `/api/minggu-indonesia/:id` | Yes | Update data Minggu Indonesia |
+| DELETE | `/api/minggu-indonesia/:id` | Yes | Hapus data Minggu Indonesia |
+
+### Partangiangan (Public Read, Admin Write)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/partangiangan` | No | Ambil semua data Partangiangan |
+| GET | `/api/partangiangan/:id` | No | Ambil detail data Partangiangan by ID |
+| GET | `/api/partangiangan/:id/view` | No | View file PDF inline |
+| GET | `/api/partangiangan/:id/download` | No | Download file PDF |
+| POST | `/api/partangiangan` | Yes | Buat data Partangiangan baru |
+| PUT | `/api/partangiangan/:id` | Yes | Update data Partangiangan |
+| DELETE | `/api/partangiangan/:id` | Yes | Hapus data Partangiangan |
+
+### Kontemporer (Public Read, Admin Write)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/kontemporer` | No | Ambil semua data Kontemporer |
+| GET | `/api/kontemporer/:id` | No | Ambil detail data Kontemporer by ID |
+| GET | `/api/kontemporer/:id/view` | No | View file PDF inline |
+| GET | `/api/kontemporer/:id/download` | No | Download file PDF |
+| POST | `/api/kontemporer` | Yes | Buat data Kontemporer baru |
+| PUT | `/api/kontemporer/:id` | Yes | Update data Kontemporer |
+| DELETE | `/api/kontemporer/:id` | Yes | Hapus data Kontemporer |
+
+### Tingting (Public Read, Admin Write)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/tingting` | No | Ambil semua data Tingting |
+| GET | `/api/tingting/:id` | No | Ambil detail data Tingting by ID |
+| GET | `/api/tingting/:id/view` | No | View file PDF inline |
+| GET | `/api/tingting/:id/download` | No | Download file PDF |
+| POST | `/api/tingting` | Yes | Buat data Tingting baru |
+| PUT | `/api/tingting/:id` | Yes | Update data Tingting |
+| DELETE | `/api/tingting/:id` | Yes | Hapus data Tingting |
+
+### Sejarah (Public Read, Admin Write)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/sejarah` | No | Ambil semua data Sejarah |
+| GET | `/api/sejarah/:id` | No | Ambil detail data Sejarah by ID |
+| POST | `/api/sejarah` | Yes | Buat data Sejarah baru |
+| PUT | `/api/sejarah/:id` | Yes | Update data Sejarah |
+| DELETE | `/api/sejarah/:id` | Yes | Hapus data Sejarah |
+
+## Contoh Request & Response
+
+### Login
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "your_username",
+    "password": "your_password"
+  }'
+```
 
 Response:
+```json
 {
   "message": "Login berhasil",
-  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": 1,
     "username": "your_username",
@@ -123,70 +211,13 @@ Response:
 }
 ```
 
-### Admin Management (Superadmin Only)
-
-#### Buat Admin Gereja
+### Ambil Semua Data
+```bash
+curl http://localhost:3000/api/minggu-batak
 ```
-POST /api/admin/create
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "username": "admingereja2",
-  "password": "password123"
-}
-```
-
-#### List Semua Admin Gereja
-```
-GET /api/admin
-Authorization: Bearer <token>
-```
-
-#### Deaktifkan Admin Gereja
-```
-PUT /api/admin/:id/deactivate
-Authorization: Bearer <token>
-```
-
-#### Aktifkan Admin Gereja
-```
-PUT /api/admin/:id/activate
-Authorization: Bearer <token>
-```
-
-#### Hapus Admin Gereja
-```
-DELETE /api/admin/:id
-Authorization: Bearer <token>
-```
-
-#### Ubah Password Admin
-```
-PUT /api/admin/change-password
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "adminId": 2,
-  "newPassword": "newpassword123"
-}
-```
-
-### Data Access (Public - No Auth Required)
-
-Semua endpoint GET untuk melihat data dapat diakses tanpa login:
-
-#### Ambil Semua Data
-```
-GET /api/minggu-batak
-GET /api/minggu-indonesia
-GET /api/partangiangan
-GET /api/kontemporer
-GET /api/tingting
-GET /api/sejarah
 
 Response:
+```json
 {
   "message": "Berhasil mengambil data",
   "data": [
@@ -201,49 +232,57 @@ Response:
 }
 ```
 
-#### Ambil Data by ID
-```
-GET /api/minggu-batak/:id
-```
-
-#### View File (Inline)
-```
-GET /api/minggu-batak/:id/view
+### Buat Data Baru (dengan Authorization)
+```bash
+curl -X POST http://localhost:3000/api/minggu-batak \
+  -H "Authorization: Bearer <token>" \
+  -F "tanggal=2026-05-03" \
+  -F "file=@document.pdf"
 ```
 
-#### Download File
-```
-GET /api/minggu-batak/:id/download
-```
-
-### Data Management (Admin/Superadmin Only)
-
-#### Buat Data Baru
-```
-POST /api/minggu-batak
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-
-FormData:
-- tanggal: "2026-05-03"
-- file: <PDF file>
+Response:
+```json
+{
+  "message": "Berhasil membuat data",
+  "data": {
+    "id": 3,
+    "tanggal": "2026-05-03",
+    "file": "uploads/minggu-batak/minggu-batak-2026-05-03.pdf",
+    "created_at": "2026-04-26T10:00:00Z",
+    "updated_at": "2026-04-26T10:00:00Z"
+  }
+}
 ```
 
-#### Update Data
-```
-PUT /api/minggu-batak/:id
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-
-FormData:
-- tanggal: "2026-05-03" (optional)
-- file: <PDF file> (optional)
+### Update Data
+```bash
+curl -X PUT http://localhost:3000/api/minggu-batak/1 \
+  -H "Authorization: Bearer <token>" \
+  -F "tanggal=2026-05-10" \
+  -F "file=@new-document.pdf"
 ```
 
-#### Hapus Data
+### Hapus Data
+```bash
+curl -X DELETE http://localhost:3000/api/minggu-batak/1 \
+  -H "Authorization: Bearer <token>"
 ```
-DELETE /api/minggu-batak/:id
-Authorization: Bearer <token>
+
+Response:
+```json
+{
+  "message": "Berhasil menghapus data"
+}
+```
+
+### Download File
+```bash
+curl -O http://localhost:3000/api/minggu-batak/1/download
+```
+
+### View File (Inline)
+```
+GET http://localhost:3000/api/minggu-batak/1/view
 ```
 
 ## Role dan Permission
@@ -306,27 +345,7 @@ HTTP Status Codes:
 npm run dev
 ```
 
-### Testing API dengan cURL
-
-Login:
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"your_username","password":"your_password"}'
-```
-
-Get Data:
-```bash
-curl http://localhost:3000/api/minggu-batak
-```
-
-Create Data (dengan token):
-```bash
-curl -X POST http://localhost:3000/api/minggu-batak \
-  -H "Authorization: Bearer <token>" \
-  -F "tanggal=2026-05-03" \
-  -F "file=@document.pdf"
-```
+Lihat bagian **Contoh Request & Response** untuk testing API dengan cURL.
 
 ## Project Structure
 
