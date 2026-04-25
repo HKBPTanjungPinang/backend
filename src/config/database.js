@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
+const bcrypt = require("bcryptjs");
 
 const dbPath = path.resolve(process.cwd(), process.env.DB_PATH || "./database.db");
 
@@ -138,7 +139,9 @@ async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL UNIQUE,
-      role TEXT NOT NULL UNIQUE CHECK(role IN ('Superadmin', 'AdminGereja')),
+      password TEXT NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('Superadmin', 'AdminGereja')),
+      is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
@@ -158,7 +161,6 @@ async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS minggu_batak (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tanggal TEXT NOT NULL,
-      deskripsi TEXT NOT NULL,
       file TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -169,7 +171,6 @@ async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS minggu_indonesia (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tanggal TEXT NOT NULL,
-      deskripsi TEXT NOT NULL,
       file TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -192,7 +193,6 @@ async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS kontemporer (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tanggal TEXT NOT NULL,
-      deskripsi TEXT NOT NULL,
       file TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -203,7 +203,6 @@ async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS tingting (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tanggal TEXT NOT NULL,
-      deskripsi TEXT NOT NULL,
       file TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -213,14 +212,18 @@ async function initializeDatabase() {
   const existingUserCount = await get("SELECT COUNT(*) AS total FROM users");
 
   if (existingUserCount.total === 0) {
+    const salt = await bcrypt.genSalt(10);
+    const superadminPassword = await bcrypt.hash("superadmin123", salt);
+    const adminPassword = await bcrypt.hash("admingereja123", salt);
+
     await run(
       `
-        INSERT INTO users (username, role)
+        INSERT INTO users (username, password, role, is_active)
         VALUES
-        (?, ?),
-        (?, ?)
+        (?, ?, ?, 1),
+        (?, ?, ?, 1)
       `,
-      ["superadmin", "Superadmin", "admingereja", "AdminGereja"]
+      ["superadmin", superadminPassword, "Superadmin", "admingereja", adminPassword, "AdminGereja"]
     );
   }
 
@@ -248,17 +251,15 @@ async function initializeDatabase() {
     ensureSamplePdf("uploads/minggu-batak/minggu-batak-2026-04-26.pdf", "Minggu Batak 2026-04-26");
     await run(
       `
-        INSERT INTO minggu_batak (tanggal, deskripsi, file)
+        INSERT INTO minggu_batak (tanggal, file)
         VALUES
-        (?, ?, ?),
-        (?, ?, ?)
+        (?, ?),
+        (?, ?)
       `,
       [
         "2026-04-19",
-        "Ibadah Minggu Batak minggu pertama bulan April.",
         "uploads/minggu-batak/minggu-batak-2026-04-19.pdf",
         "2026-04-26",
-        "Ibadah Minggu Batak minggu kedua dengan liturgi khusus jemaat.",
         "uploads/minggu-batak/minggu-batak-2026-04-26.pdf",
       ]
     );
@@ -271,17 +272,15 @@ async function initializeDatabase() {
     ensureSamplePdf("uploads/minggu-indonesia/minggu-indonesia-2026-04-26.pdf", "Minggu Indonesia 2026-04-26");
     await run(
       `
-        INSERT INTO minggu_indonesia (tanggal, deskripsi, file)
+        INSERT INTO minggu_indonesia (tanggal, file)
         VALUES
-        (?, ?, ?),
-        (?, ?, ?)
+        (?, ?),
+        (?, ?)
       `,
       [
         "2026-04-19",
-        "Ibadah Minggu Indonesia untuk seluruh jemaat.",
         "uploads/minggu-indonesia/minggu-indonesia-2026-04-19.pdf",
         "2026-04-26",
-        "Ibadah Minggu Indonesia dengan tema pelayanan dan kesaksian.",
         "uploads/minggu-indonesia/minggu-indonesia-2026-04-26.pdf",
       ]
     );
@@ -319,17 +318,15 @@ async function initializeDatabase() {
     ensureSamplePdf("uploads/kontemporer/kontemporer-2026-04-28.pdf", "Kontemporer 2026-04-28");
     await run(
       `
-        INSERT INTO kontemporer (tanggal, deskripsi, file)
+        INSERT INTO kontemporer (tanggal, file)
         VALUES
-        (?, ?, ?),
-        (?, ?, ?)
+        (?, ?),
+        (?, ?)
       `,
       [
         "2026-04-21",
-        "Ibadah kontemporer pemuda dan remaja dengan pujian modern.",
         "uploads/kontemporer/kontemporer-2026-04-21.pdf",
         "2026-04-28",
-        "Ibadah kontemporer dengan sesi doa dan penyembahan bersama.",
         "uploads/kontemporer/kontemporer-2026-04-28.pdf",
       ]
     );
@@ -342,12 +339,11 @@ async function initializeDatabase() {
     ensureSamplePdf(sampleTingtingFile, "Tingting APP GEREJA");
     await run(
       `
-        INSERT INTO tingting (tanggal, deskripsi, file)
-        VALUES (?, ?, ?)
+        INSERT INTO tingting (tanggal, file)
+        VALUES (?, ?)
       `,
       [
         "2026-04-20",
-        "Tingting pengumuman awal untuk contoh data backend.",
         sampleTingtingFile,
       ]
     );
