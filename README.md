@@ -89,16 +89,13 @@ JWT_SECRET=your-secret-key-change-in-production
 - `created_at` - Tanggal pembuatan
 - `updated_at` - Tanggal update
 
-## Default Users
+## Keamanan
 
-Saat aplikasi pertama kali dijalankan, akan dibuat 2 user default:
+Aplikasi ini menggunakan JWT untuk authentication dan bcryptjs untuk password hashing. Pastikan untuk:
 
-| Username | Password | Role |
-|----------|----------|------|
-| superadmin | superadmin123 | Superadmin |
-| admingereja | admingereja123 | AdminGereja |
-
-**PENTING**: Ubah password ini setelah login pertama kali!
+1. **Mengubah JWT_SECRET** di file `.env` dengan nilai yang kuat
+2. **Mengubah password default** akun Superadmin dan AdminGereja setelah first login
+3. **Jangan membagikan credentials** ke publik
 
 ## API Endpoints
 
@@ -110,8 +107,8 @@ POST /api/auth/login
 Content-Type: application/json
 
 {
-  "username": "superadmin",
-  "password": "superadmin123"
+  "username": "your_username",
+  "password": "your_password"
 }
 
 Response:
@@ -120,7 +117,7 @@ Response:
   "token": "eyJhbGciOiJIUzI1NiIs...",
   "user": {
     "id": 1,
-    "username": "superadmin",
+    "username": "your_username",
     "role": "Superadmin"
   }
 }
@@ -315,7 +312,7 @@ Login:
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"superadmin","password":"superadmin123"}'
+  -d '{"username":"your_username","password":"your_password"}'
 ```
 
 Get Data:
