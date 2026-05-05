@@ -43,15 +43,31 @@ const PDF_RESOURCES = {
 const JSON_RESOURCES = {
   sejarah: {
     tableName: "sejarah",
+    storageFolder: "sejarah",
     fields: ["deskripsi", "gambar"],
     requiredFields: ["deskripsi", "gambar"],
+    fileFields: ["gambar"],
     orderBy: "id DESC",
   },
 };
 
 export default {
   async fetch(request, env) {
-    return handleRequest(request, env);
+    try {
+      const response = await handleRequest(request, env);
+      return withCors(request, env, response);
+    } catch (error) {
+      console.error("Unhandled request error:", error);
+      const status = error.statusCode || 500;
+      const message = error.message || "Terjadi kesalahan pada server";
+      return jsonResponse(
+        { message, error: String(error) },
+        {
+          status,
+          headers: corsHeaders(request, env),
+        }
+      );
+    }
   },
 };
 
@@ -61,7 +77,10 @@ async function handleRequest(request, env) {
 
   // Handle CORS preflight
   if (request.method === "OPTIONS") {
-    return withCors(request, env, new Response(null, { status: 204 }));
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders(request, env),
+    });
   }
 
   try {
@@ -182,7 +201,7 @@ async function handleJsonResource(request, env, resourceName, id) {
 
   if (request.method === "GET" && !id) {
     const rows = await queryAll(env.DB, `SELECT * FROM ${config.tableName} ORDER BY ${config.orderBy}`);
-    return json(request, env, rows);
+    return json(request, env, rows.map((row) => buildJsonResourceUrls(request, resourceName, row, config)));
   }
 
   if (request.method === "GET" && id) {
@@ -190,12 +209,12 @@ async function handleJsonResource(request, env, resourceName, id) {
     if (!row) {
       throw createError(`Data ${config.tableName} dengan id ${id} tidak ditemukan`, 404);
     }
-    return json(request, env, row);
+    return json(request, env, buildJsonResourceUrls(request, resourceName, row, config));
   }
 
   if (request.method === "POST") {
     await requireRole(request, env, ["AdminGereja", "Superadmin"]);
-    const body = await parseRequestBody(request);
+    const body = await parseJsonResourcePayload(request, env, config);
     validateRequiredFields(body, config.requiredFields);
 
     const result = await executeRun(
@@ -205,18 +224,18 @@ async function handleJsonResource(request, env, resourceName, id) {
     );
 
     const created = await queryFirst(env.DB, `SELECT * FROM ${config.tableName} WHERE id = ?`, [result.id]);
-    return json(request, env, created, 201);
+    return json(request, env, buildJsonResourceUrls(request, resourceName, created, config), 201);
   }
 
   if (request.method === "PUT" && id) {
     await requireRole(request, env, ["AdminGereja", "Superadmin"]);
-    const body = await parseRequestBody(request);
-    validateRequiredFields(body, config.requiredFields);
-
     const existing = await queryFirst(env.DB, `SELECT * FROM ${config.tableName} WHERE id = ?`, [id]);
     if (!existing) {
       throw createError(`Data ${config.tableName} dengan id ${id} tidak ditemukan`, 404);
     }
+
+    const body = await parseJsonResourcePayload(request, env, config, existing);
+    validateRequiredFields(body, config.requiredFields);
 
     await executeRun(
       env.DB,
@@ -225,7 +244,7 @@ async function handleJsonResource(request, env, resourceName, id) {
     );
 
     const updated = await queryFirst(env.DB, `SELECT * FROM ${config.tableName} WHERE id = ?`, [id]);
-    return json(request, env, updated);
+    return json(request, env, buildJsonResourceUrls(request, resourceName, updated, config));
   }
 
   if (request.method === "DELETE" && id) {
@@ -236,6 +255,11 @@ async function handleJsonResource(request, env, resourceName, id) {
     }
 
     await executeRun(env.DB, `DELETE FROM ${config.tableName} WHERE id = ?`, [id]);
+    for (const field of config.fileFields || []) {
+      if (existing[field]) {
+        await deleteAsset(env.DB, existing[field]);
+      }
+    }
     return json(request, env, { message: `Data ${config.tableName} berhasil dihapus` });
   }
 
@@ -352,6 +376,49 @@ async function updatePdfRecord(request, env, resourceName, config, id) {
 
   const updated = await queryFirst(env.DB, `SELECT * FROM ${config.tableName} WHERE id = ?`, [id]);
   return json(request, env, buildPdfUrls(request, resourceName, updated));
+}
+
+async function parseJsonResourcePayload(request, env, config, existing = null) {
+  const contentType = request.headers.get("content-type") || "";
+  const fileFields = config.fileFields || [];
+
+  if (!contentType.includes("multipart/form-data")) {
+    return parseRequestBody(request);
+  }
+
+  const formData = await request.formData();
+  const body = {};
+  const uploadedKeys = [];
+
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      if (fileFields.includes(key) && value.size > 0) {
+        const storedKey = await storeUploadedAsset(env.DB, config.storageFolder, value);
+        body[key] = storedKey;
+        uploadedKeys.push({ field: key, key: storedKey });
+      }
+      continue;
+    }
+
+    body[key] = value;
+  }
+
+  if (existing) {
+    for (const field of fileFields) {
+      if (!body[field] && existing[field]) {
+        body[field] = existing[field];
+      }
+    }
+  }
+
+  for (const uploaded of uploadedKeys) {
+    const previousKey = existing?.[uploaded.field];
+    if (previousKey && previousKey !== uploaded.key) {
+      await deleteAsset(env.DB, previousKey);
+    }
+  }
+
+  return body;
 }
 
 async function login(request, env) {
@@ -646,13 +713,22 @@ async function saveAsset(db, key, file, fileName) {
   );
 }
 
+async function storeUploadedAsset(db, folder, file) {
+  const safeOriginalName = file.name.replace(/\s+/g, "-");
+  const fileName = `${Date.now()}-${safeOriginalName}`;
+  const key = `uploads/${folder}/${fileName}`;
+
+  await saveAsset(db, key, file, fileName);
+
+  return key;
+}
+
 async function deleteAsset(db, key) {
   await executeRun(db, "DELETE FROM file_assets WHERE asset_key = ?", [key]);
 }
 
 async function storeUploadedPdf(db, folder, file) {
   const safeOriginalName = file.name.replace(/\s+/g, "-");
-  const fileName = `${Date.now()}-${safeOriginalName}`;
 
   if (!safeOriginalName.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
     throw createError("File yang diupload harus PDF", 400);
@@ -662,10 +738,7 @@ async function storeUploadedPdf(db, folder, file) {
     throw createError("Ukuran file maksimal 10MB", 400);
   }
 
-  const key = `uploads/${folder}/${fileName}`;
-  await saveAsset(db, key, file, fileName);
-
-  return key;
+  return storeUploadedAsset(db, folder, file);
 }
 
 async function serveAsset(request, env, key, dispositionMode) {
@@ -719,6 +792,19 @@ function buildPdfUrls(request, routeName, row) {
     download_url: `${url.origin}/api/${routeName}/${row.id}/download`,
     file_name: row.file.split("/").pop(),
   };
+}
+
+function buildJsonResourceUrls(request, routeName, row, config) {
+  const url = new URL(request.url);
+  const result = { ...row };
+
+  for (const field of config.fileFields || []) {
+    if (row[field]) {
+      result[`${field}_url`] = `${url.origin}/${row[field]}`;
+    }
+  }
+
+  return result;
 }
 
 async function queryAll(db, sql, params = []) {
@@ -837,35 +923,48 @@ function notFound(request, env) {
 }
 
 function json(request, env, data, status = 200) {
-  return withCors(
-    request,
-    env,
-    new Response(JSON.stringify(data), {
-      status,
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-      },
-    })
-  );
+  return jsonResponse(data, { status });
+}
+
+function jsonResponse(data, init = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("Content-Type", "application/json; charset=utf-8");
+
+  return new Response(JSON.stringify(data), {
+    ...init,
+    headers,
+  });
 }
 
 function withCors(request, env, response) {
   const headers = new Headers(response.headers);
-  const allowedOrigin = resolveAllowedOrigin(request, env);
-
-  if (allowedOrigin) {
-    headers.set("Access-Control-Allow-Origin", allowedOrigin);
-    headers.set("Access-Control-Allow-Credentials", "true");
+  for (const [key, value] of corsHeaders(request, env)) {
+    headers.set(key, value);
   }
-  headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
-  headers.set("Access-Control-Max-Age", "86400");
 
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
   });
+}
+
+function corsHeaders(request, env) {
+  const headers = new Headers();
+  const allowedOrigin = resolveAllowedOrigin(request, env);
+  const requestedHeaders = request.headers.get("Access-Control-Request-Headers");
+
+  if (allowedOrigin) {
+    headers.set("Access-Control-Allow-Origin", allowedOrigin);
+    headers.set("Access-Control-Allow-Credentials", "true");
+  }
+
+  headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  headers.set("Access-Control-Allow-Headers", requestedHeaders || "Authorization, Content-Type");
+  headers.set("Access-Control-Max-Age", "86400");
+  headers.set("Vary", "Origin, Access-Control-Request-Headers");
+
+  return headers;
 }
 
 function resolveAllowedOrigin(request, env) {
