@@ -151,7 +151,7 @@ Solution: Upload only PDF files
 #### Cause C: Missing required fields
 ```
 Required: tanggal, file
-Optional: lokasi (partangiangan), waktu (partangiangan)
+Optional: lokasi (partangiangan-wijk/partangiangan-keluarga), waktu (partangiangan-wijk/partangiangan-keluarga)
 
 Solution: Check request body format
 ```

@@ -41,7 +41,8 @@ https://app-gereja-api.antonio-girsang.workers.dev
 - `GET /api/sejarah`
 - `GET /api/minggu-batak`
 - `GET /api/minggu-indonesia`
-- `GET /api/partangiangan`
+- `GET /api/partangiangan-wijk`
+- `GET /api/partangiangan-keluarga`
 - `GET /api/kontemporer`
 - `GET /api/tingting`
 - `GET /api/<resource>/:id/view`
@@ -50,7 +51,8 @@ https://app-gereja-api.antonio-girsang.workers.dev
 ## Contoh konsumsi FE
 
 ```text
-GET https://app-gereja-api.antonio-girsang.workers.dev/api/partangiangan
+GET https://app-gereja-api.antonio-girsang.workers.dev/api/partangiangan-wijk
+GET https://app-gereja-api.antonio-girsang.workers.dev/api/partangiangan-keluarga
 GET https://app-gereja-api.antonio-girsang.workers.dev/api/minggu-batak
 POST https://app-gereja-api.antonio-girsang.workers.dev/api/auth/login
 ```

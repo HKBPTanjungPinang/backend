@@ -120,12 +120,12 @@ users
 ├── created_at
 └── updated_at
 
-minggu_batak, minggu_indonesia, partangiangan, kontemporer, tingting
+minggu_batak, minggu_indonesia, partangiangan_wijk, partangiangan_keluarga, kontemporer, tingting
 ├── id (PK)
 ├── tanggal
 ├── file (path)
-├── lokasi (partangiangan only)
-├── waktu (partangiangan only)
+├── lokasi (partangiangan_wijk and partangiangan_keluarga only)
+├── waktu (partangiangan_wijk and partangiangan_keluarga only)
 ├── created_at
 └── updated_at
 

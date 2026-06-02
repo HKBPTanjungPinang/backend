@@ -153,7 +153,8 @@ PUT  /api/admin/change-password     # Change password
 GET /api/sejarah                    # Get history
 GET /api/minggu-batak              # Get Batak sermons
 GET /api/minggu-indonesia          # Get Indonesian sermons
-GET /api/partangiangan             # Get prayer meetings
+GET /api/partangiangan-wijk        # Get wijk prayer meetings
+GET /api/partangiangan-keluarga    # Get family prayer meetings
 GET /api/kontemporer               # Get contemporary
 GET /api/tingting                  # Get bells
 ```
@@ -232,15 +233,16 @@ npm run cf:d1:seed         # Seed data
 ### PDF Resources (File-based)
 - **minggu-batak**: Sunday sermons (Batak)
 - **minggu-indonesia**: Sunday sermons (Indonesian)
-- **partangiangan**: Prayer meetings
+- **partangiangan-wijk**: Wijk prayer meetings
+- **partangiangan-keluarga**: Family prayer meetings
 - **kontemporer**: Contemporary messages
 - **tingting**: Bell/Announcements
 
 Fields:
 - `tanggal`: Date (YYYY-MM-DD)
 - `file`: File path (uploaded to D1 or R2)
-- `lokasi`: Location (partangiangan only)
-- `waktu`: Time (partangiangan only)
+- `lokasi`: Location (partangiangan-wijk and partangiangan-keluarga only)
+- `waktu`: Time (partangiangan-wijk and partangiangan-keluarga only)
 
 ### JSON Resources (Data-based)
 - **sejarah**: Church history

@@ -18,10 +18,13 @@ VALUES
   (1, '2026-04-19', 'uploads/minggu-indonesia/minggu-indonesia-2026-04-19.pdf'),
   (2, '2026-04-26', 'uploads/minggu-indonesia/minggu-indonesia-2026-04-26.pdf');
 
-INSERT OR IGNORE INTO partangiangan (id, tanggal, lokasi, waktu, file)
+INSERT OR IGNORE INTO partangiangan_wijk (id, tanggal, lokasi, waktu, file)
 VALUES
-  (1, '2026-04-20', 'Rumah Keluarga Simanjuntak', '19:00', 'uploads/partangiangan/partangiangan-2026-04-20.pdf'),
-  (2, '2026-04-27', 'Rumah Keluarga Sitorus', '19:30', 'uploads/partangiangan/partangiangan-2026-04-27.pdf');
+  (1, '2026-04-20', 'Wijk I', '19:00', 'uploads/partangiangan-wijk/partangiangan-wijk-2026-04-20.pdf');
+
+INSERT OR IGNORE INTO partangiangan_keluarga (id, tanggal, lokasi, waktu, file)
+VALUES
+  (1, '2026-04-27', 'Rumah Keluarga Sitorus', '19:30', 'uploads/partangiangan-keluarga/partangiangan-keluarga-2026-04-27.pdf');
 
 INSERT OR IGNORE INTO kontemporer (id, tanggal, file)
 VALUES
