@@ -1,18 +1,14 @@
 name = "app-gereja-api"
 main = "src/worker.mjs"
 compatibility_date = "2026-04-25"
-account_id = "c026bc4076210ead18e0568981ef1854"
+account_id = "6bb4f411b0f9892bdb777f06cd520626"
 workers_dev = true
 
 [[d1_databases]]
 binding = "DB"
 database_name = "app_gereja_db"
-database_id = "8b7b79b2-42d3-4130-9f54-f76c0b1216ee"
+database_id = "4eaddcce-7178-41b4-996a-4a6467e96afd"
 
 [vars]
 ALLOWED_ORIGINS = "http://localhost:8081,http://localhost:3000,http://localhost:5173"
 
-[assets]
-directory = "./public-assets"
-binding = "ASSETS"
-run_worker_first = true
